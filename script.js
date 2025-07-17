@@ -114,13 +114,16 @@ const remixOutput = document.getElementById("remix-output");
 
 // This function sends the recipe and remix theme to OpenAI and shows the remix
 async function remixRecipeWithAI(recipe, theme) {
-  // Show a fun, friendly loading message while waiting for the AI
-  remixOutput.textContent = "🪄 Chef is cooking up your remix... hang tight for a tasty twist!";
+  remixOutput.innerHTML = "<p>🪄 Chef is cooking up your remix... hang tight for a tasty twist!</p>";
 
   // Build the prompt for the AI
   const prompt = `
 You are a creative chef. Remix this recipe for "${recipe.strMeal}" with the theme: "${theme}".
-Give a short, fun, and doable version. Highlight any changed ingredients or instructions.
+Give a short, fun, and doable version. Format your response with these sections:
+- Title of the remixed dish
+- Brief description
+- Ingredients (as a list)
+- Instructions (as numbered steps)
 Recipe JSON:
 ${JSON.stringify(recipe, null, 2)}
 `;
@@ -147,14 +150,25 @@ ${JSON.stringify(recipe, null, 2)}
 
     const data = await res.json(); // Parse the JSON response
 
-    // Show the AI's remix in the output box
-    remixOutput.textContent = data.choices && data.choices[0] && data.choices[0].message.content
-      ? data.choices[0].message.content
-      : "Oops! Chef couldn't remix your recipe this time. Please try again in a moment.";
+    // Format and display the AI's remix
+    if (data.choices && data.choices[0] && data.choices[0].message.content) {
+      const remixText = data.choices[0].message.content;
+      // Convert the text to HTML with proper formatting
+      const formattedRemix = remixText
+        .replace(/^(.+)\n/, '<h3>$1</h3>') // First line as title
+        .replace(/\n\n/g, '</p><p>') // Double line breaks as paragraphs
+        .replace(/\n- /g, '<li>') // Lines starting with "- " as list items
+        .replace(/\n\d+\. /g, '</p><p class="instruction">') // Numbered lines as instructions
+        .replace(/^/, '<p>') // Start with paragraph
+        .replace(/$/, '</p>'); // End with paragraph
+
+      remixOutput.innerHTML = formattedRemix;
+    } else {
+      remixOutput.innerHTML = "<p>Oops! Chef couldn't remix your recipe this time. Please try again in a moment.</p>";
+    }
 
   } catch (error) {
-    // Friendly error message if something goes wrong
-    remixOutput.textContent = "Oops! Something went wrong while remixing. Please try again!";
+    remixOutput.innerHTML = "<p>Oops! Something went wrong while remixing. Please try again!</p>";
   }
 }
 

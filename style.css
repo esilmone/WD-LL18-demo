@@ -166,8 +166,34 @@ p {
   color: #455;
   border: 1px solid #e5e7f0;
   min-height: 40px;
-  white-space: pre-line;
-  list-style: 1.5;
+  line-height: 1.5;
+}
+
+.remix-box h3 {
+  color: #4568dc;
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.remix-box p {
+  margin-bottom: 12px;
+}
+
+.remix-box li {
+  margin-bottom: 6px;
+}
+
+.remix-box .instruction {
+  margin-top: 8px;
+  padding-left: 24px;
+  position: relative;
+}
+
+.remix-box .instruction::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: #4568dc;
 }
 
 /* Icon styles */
