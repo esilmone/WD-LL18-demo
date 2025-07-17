@@ -116,17 +116,28 @@ const remixOutput = document.getElementById("remix-output");
 async function remixRecipeWithAI(recipe, theme) {
   remixOutput.innerHTML = "<p>🪄 Chef is cooking up your remix... hang tight for a tasty twist!</p>";
 
-  // Build the prompt for the AI
   const prompt = `
-You are a creative chef. Remix this recipe for "${recipe.strMeal}" with the theme: "${theme}".
-Give a short, fun, and doable version. Format your response with these sections:
-- Title of the remixed dish
-- Brief description
-- Ingredients (as a list)
-- Instructions (as numbered steps)
-Recipe JSON:
-${JSON.stringify(recipe, null, 2)}
-`;
+Remix this recipe for "${recipe.strMeal}" with the theme: "${theme}".
+Format your response EXACTLY like this, using these exact headings:
+
+REMIXED TITLE:
+[Your creative recipe name]
+
+DESCRIPTION:
+[A brief, fun description of your remix]
+
+INGREDIENTS:
+- [ingredient 1]
+- [ingredient 2]
+...
+
+INSTRUCTIONS:
+1. [First step]
+2. [Second step]
+...
+
+Make it fun, creative, and doable!
+Recipe to remix: ${JSON.stringify(recipe, null, 2)}`;
 
   try {
     // Send the prompt to OpenAI's chat completions API
@@ -153,16 +164,37 @@ ${JSON.stringify(recipe, null, 2)}
     // Format and display the AI's remix
     if (data.choices && data.choices[0] && data.choices[0].message.content) {
       const remixText = data.choices[0].message.content;
-      // Convert the text to HTML with proper formatting
-      const formattedRemix = remixText
-        .replace(/^(.+)\n/, '<h3>$1</h3>') // First line as title
-        .replace(/\n\n/g, '</p><p>') // Double line breaks as paragraphs
-        .replace(/\n- /g, '<li>') // Lines starting with "- " as list items
-        .replace(/\n\d+\. /g, '</p><p class="instruction">') // Numbered lines as instructions
-        .replace(/^/, '<p>') // Start with paragraph
-        .replace(/$/, '</p>'); // End with paragraph
+      
+      // Split the response into sections
+      const sections = remixText.split('\n\n');
+      let formattedHtml = '';
+      
+      sections.forEach(section => {
+        if (section.startsWith('REMIXED TITLE:')) {
+          formattedHtml += `<h3>${section.replace('REMIXED TITLE:', '').trim()}</h3>`;
+        }
+        else if (section.startsWith('DESCRIPTION:')) {
+          formattedHtml += `<p>${section.replace('DESCRIPTION:', '').trim()}</p>`;
+        }
+        else if (section.startsWith('INGREDIENTS:')) {
+          formattedHtml += '<h4>Ingredients:</h4><ul>';
+          section.split('\n').slice(1).forEach(ing => {
+            if (ing.trim()) formattedHtml += `<li>${ing.replace('-', '').trim()}</li>`;
+          });
+          formattedHtml += '</ul>';
+        }
+        else if (section.startsWith('INSTRUCTIONS:')) {
+          formattedHtml += '<h4>Instructions:</h4><ol>';
+          section.split('\n').slice(1).forEach(step => {
+            if (step.trim()) {
+              formattedHtml += `<li>${step.replace(/^\d+\.\s*/, '').trim()}</li>`;
+            }
+          });
+          formattedHtml += '</ol>';
+        }
+      });
 
-      remixOutput.innerHTML = formattedRemix;
+      remixOutput.innerHTML = formattedHtml;
     } else {
       remixOutput.innerHTML = "<p>Oops! Chef couldn't remix your recipe this time. Please try again in a moment.</p>";
     }
